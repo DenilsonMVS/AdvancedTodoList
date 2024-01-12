@@ -4,41 +4,23 @@ import { TASK_STATUS, tasksCollection } from '../db/tasksCollection';
 
 
 Meteor.publish("tasks", function(onlyToDo) {
-  if(onlyToDo) {
-    return tasksCollection.find({
-      $or: [
-        {
-          creator: this.userId,
-          personal: true,
-          status: {
-            $in: [TASK_STATUS.READY, TASK_STATUS.IN_PROGRESS]
-          },
+  const onlyToDoFilter = onlyToDo ? {status: {
+    $in: [TASK_STATUS.READY, TASK_STATUS.IN_PROGRESS]
+  }} : {};
+
+  return tasksCollection.find({
+    $or: [
+      {
+        creator: this.userId,
+        personal: true,
+        ...onlyToDoFilter
+      }, {
+        users: {
+          $in: [this.userId]
         },
-        {
-          users: {
-            $in: [this.userId]
-          },
-          personal: false,
-          status: {
-            $in: [TASK_STATUS.READY, TASK_STATUS.IN_PROGRESS]
-          },
-        }
-      ]
-    });
-  } else {
-    return tasksCollection.find({
-      $or: [
-        {
-          creator: this.userId,
-          personal: true
-        },
-        {
-          users: {
-            $in: [this.userId]
-          },
-          personal: false
-        }
-      ]
-    });
-  }
+        personal: false,
+        ...onlyToDoFilter
+      }
+    ]
+  });
 });
