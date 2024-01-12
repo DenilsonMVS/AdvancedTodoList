@@ -2,7 +2,7 @@
 import { Meteor } from 'meteor/meteor';
 
 export function subscribeUsers(onReady) {
-  Meteor.subscribe("getUserUsernames", {
+  return Meteor.subscribe("getUserUsernames", {
     onReady: onReady
   });
 }

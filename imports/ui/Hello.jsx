@@ -6,27 +6,25 @@ import { tasksCollection, TASK_STATUS, subscribeTasks } from "../db/tasksCollect
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import { useTracker } from 'meteor/react-meteor-data';
 
 
 export function Hello() {
   
-  const [subscriptionReady, setSubscriptionReady] = useState(false);
-  subscribeTasks(() => {
-    setSubscriptionReady(true);
-  });
+  useEffect(() => {
+    const handler = subscribeTasks(false, () => {});
+    return () => {
+      handler.stop();
+    };
+  }, []);
 
   const user = Meteor.user();
 
-  const [totalTasks, setTotalTasks] = useState(0);
-  const [tasksFinished, setTasksFinished] = useState(0);
+  const totalTasks = useTracker(() => tasksCollection.find({}).count());
+  const tasksFinished = useTracker(() => tasksCollection.find({ status: TASK_STATUS.FINISHED }).count());
   const [drawerOpen, setDrawerOpen] = useState(false);
   const tasksToFinish = totalTasks - tasksFinished;
   const navigate = useNavigate();
-
-  useEffect(() => {
-    setTotalTasks(tasksCollection.find({}).count());
-    setTasksFinished(tasksCollection.find({ status: TASK_STATUS.FINISHED }).count());
-  }, [subscriptionReady]);
 
   const toggleDrawer = () => {
     setDrawerOpen(!drawerOpen);

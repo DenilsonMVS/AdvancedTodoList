@@ -190,12 +190,18 @@ export function EditTask() {
   const [userSubscribed, setUserSubscribed] = useState(false);
   const subscriptionReady = taskSubscribed && userSubscribed;
 
-  subscribeTasks(() => {
-    setTaskSubscribed(true);
-  });
-  subscribeUsers(() => {
-    setUserSubscribed(true);
-  });
+  useEffect(() => {
+    const taskHandler = subscribeTasks(false, () => {
+      setTaskSubscribed(true);
+    });
+    const userHandler = subscribeUsers(() => {
+      setUserSubscribed(true);
+    });
+    return () => {
+      taskHandler.stop();
+      userHandler.stop();
+    };
+  }, []);
 
 
   const user = Meteor.user(); 

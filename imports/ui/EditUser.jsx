@@ -12,7 +12,13 @@ import { subscribeUserData } from "../db/userData";
 export function EditUser() {
 
   const [subscriptionReady, setSubscriptionReady] = useState(false);
-  subscribeUserData(() => setSubscriptionReady(true));
+  useEffect(() => {
+    const handler = subscribeUserData(() => setSubscriptionReady(true));
+    return () => {
+      handler.stop();
+    };
+  }, []);
+  
 
   const navigate = useNavigate();
 

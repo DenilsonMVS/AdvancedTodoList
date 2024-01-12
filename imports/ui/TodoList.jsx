@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import List from '@mui/material/List';
 import { Button, IconButton, ListItem, ListItemIcon, ListItemText } from "@mui/material";
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -7,7 +7,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { tasksCollection, TASK_STATUS } from "../db/tasksCollection";
+import { tasksCollection, TASK_STATUS, subscribeTasks } from "../db/tasksCollection";
 import { Meteor } from 'meteor/meteor';
 import { useTracker } from 'meteor/react-meteor-data';
 import { useNavigate, Link } from 'react-router-dom';
@@ -45,28 +45,22 @@ function nextStatus(status) {
   return TASK_STATUS.READY;
 }
 
-function getTasks() {
-  if(!Meteor.user()) {
-    return [];
-  }
-
-  const tasksHandler = Meteor.subscribe("tasks");
-  if(!tasksHandler.ready()) {
-    return [];
-  }
-
-  return tasksCollection.find({}, {}).fetch();
-}
-
 
 export function TodoList() {
   const [anchor, setAnchor] = useState({});
+  const [onlyToDo, setOnlyToDo] = useState(false);
+
   const user = Meteor.user();
   const navigate = useNavigate();
 
-  const tasks = useTracker(getTasks);
+  useEffect(() => {
+    const handler = subscribeTasks(onlyToDo, () => {});
+    return () => {
+      handler.stop();
+    };
+  }, [onlyToDo]);
 
-
+  const tasks = useTracker(() => tasksCollection.find({}, {}).fetch());
 
   function handleClose() {
     setAnchor({});
@@ -79,7 +73,7 @@ export function TodoList() {
   }
 
   function handleEdit(id) {
-    navigate(`/edit/${id}`)
+    navigate(`/edit/${id}`);
   }
 
   function handleDelete(id) {
@@ -137,6 +131,15 @@ export function TodoList() {
           </ListItem>;
         })}
       </List>
+      <Box position="relative" display="flex" alignItems="center" justifyContent="flex-start" width="100%" padding="10px" left="30vw">
+        <input
+          type="checkbox"
+          checked={onlyToDo}
+          onClick={() => setOnlyToDo(!onlyToDo)}
+          readOnly
+        />
+        <label>Apenas não concluídas</label>
+      </Box>
       <Box display="flex" justifyContent="flex-end" width="60vmin">
         <IconButton
           aria-label="add"
