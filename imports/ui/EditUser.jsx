@@ -13,7 +13,7 @@ export function EditUser() {
 
   const [subscriptionReady, setSubscriptionReady] = useState(false);
   useEffect(() => {
-    const handler = subscribeUserData(() => setSubscriptionReady(true));
+    const handler = subscribeUserData({ onReady: () => setSubscriptionReady(true) });
     return () => {
       handler.stop();
     };

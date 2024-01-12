@@ -12,7 +12,7 @@ import { useTracker } from 'meteor/react-meteor-data';
 export function Hello() {
   
   useEffect(() => {
-    const handler = subscribeTasks(false, () => {});
+    const handler = subscribeTasks({});
     return () => {
       handler.stop();
     };

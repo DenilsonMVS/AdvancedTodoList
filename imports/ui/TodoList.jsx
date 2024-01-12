@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import List from '@mui/material/List';
-import { Button, IconButton, ListItem, ListItemIcon, ListItemText } from "@mui/material";
+import { Button, IconButton, ListItem, ListItemIcon, ListItemText, TextField } from "@mui/material";
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined';
 import Menu from '@mui/material/Menu';
@@ -13,6 +13,7 @@ import { useTracker } from 'meteor/react-meteor-data';
 import { useNavigate, Link } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import { ReturnButton } from "./ReturnButton";
+import SearchIcon from '@mui/icons-material/Search';
 
 
 function formatTime(date) {
@@ -49,16 +50,18 @@ function nextStatus(status) {
 export function TodoList() {
   const [anchor, setAnchor] = useState({});
   const [onlyToDo, setOnlyToDo] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [effectiveSearchText, setEffectiveSearchText] = useState("");
 
   const user = Meteor.user();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handler = subscribeTasks(onlyToDo, () => {});
+    const handler = subscribeTasks({onlyToDo, substr: searchText});
     return () => {
       handler.stop();
     };
-  }, [onlyToDo]);
+  }, [onlyToDo, effectiveSearchText]);
 
   const tasks = useTracker(() => tasksCollection.find({}, {}).fetch());
 
@@ -97,6 +100,25 @@ export function TodoList() {
       <Typography variant="h3">
         Tarefas cadastradas
       </Typography>
+
+      <Box width="60vmin" marginBottom="2rem" textAlign="center" display="flex" marginTop="2rem">
+        <TextField
+          label="Search"
+          variant="outlined"
+          fullWidth
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+        />
+        <IconButton
+          color="primary"
+          aria-label="search"
+          onClick={() => setEffectiveSearchText(searchText)}
+        >
+          <SearchIcon />
+        </IconButton>
+      </Box>
+
+      
       <List>
         {tasks.map((task) => {
           const taskCreator = Meteor.users.findOne(task.creator).username;

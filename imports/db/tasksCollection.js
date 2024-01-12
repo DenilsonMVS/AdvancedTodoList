@@ -9,8 +9,12 @@ export const TASK_STATUS = {
 
 export const tasksCollection = new Mongo.Collection("tasks");
 
-export function subscribeTasks(onlyToDo, onReady) {
-  return Meteor.subscribe("tasks", onlyToDo, {
-    onReady: onReady
+export function subscribeTasks({ onlyToDo, substr, onReady }) {
+  if(onReady == undefined) {
+    onReady = () => {};
+  }
+
+  return Meteor.subscribe("tasks", onlyToDo, substr, {
+    onReady
   });
 }

@@ -191,12 +191,12 @@ export function EditTask() {
   const subscriptionReady = taskSubscribed && userSubscribed;
 
   useEffect(() => {
-    const taskHandler = subscribeTasks(false, () => {
+    const taskHandler = subscribeTasks({ onReady: () => {
       setTaskSubscribed(true);
-    });
-    const userHandler = subscribeUsers(() => {
+    }});
+    const userHandler = subscribeUsers({ onReady: () => {
       setUserSubscribed(true);
-    });
+    }});
     return () => {
       taskHandler.stop();
       userHandler.stop();
