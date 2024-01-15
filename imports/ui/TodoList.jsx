@@ -1,10 +1,5 @@
 import React, { useEffect, useState } from "react";
-import List from '@mui/material/List';
-import { Button, IconButton, ListItem, ListItemIcon, ListItemText, TextField } from "@mui/material";
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
+import { IconButton, TextField } from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { tasksCollection, TASK_STATUS, subscribeTasks } from "../db/tasksCollection";
@@ -14,25 +9,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import { ReturnButton } from "./ReturnButton";
 import SearchIcon from '@mui/icons-material/Search';
+import { TodoListPage } from "./TodoListPage";
+import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 
-
-function formatTime(date) {
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  return `${hours}:${minutes}`;
-}
-
-function getColor(status) {
-  switch(status) {
-    case TASK_STATUS.FINISHED:
-      return "green";
-    case TASK_STATUS.IN_PROGRESS:
-      return "yellow";
-    case TASK_STATUS.READY:
-      return "white";
-  }
-  return "black";
-}
 
 function nextStatus(status) {
   switch(status) {
@@ -48,12 +28,12 @@ function nextStatus(status) {
 
 
 export function TodoList() {
-  const [anchor, setAnchor] = useState({});
+  
   const [onlyToDo, setOnlyToDo] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [effectiveSearchText, setEffectiveSearchText] = useState("");
+  const [currentPage, setCurrentPage] = useState(0);
 
-  const user = Meteor.user();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -64,20 +44,8 @@ export function TodoList() {
   }, [onlyToDo, effectiveSearchText]);
 
   const tasks = useTracker(() => tasksCollection.find({}, {}).fetch());
-
-  function handleClose() {
-    setAnchor({});
-  }
-
-  function handleClick(e, id) {
-    setAnchor({
-      [id]: e.currentTarget
-    });
-  }
-
-  function handleEdit(id) {
-    navigate(`/edit/${id}`);
-  }
+  const tasksPerPage = 4;
+  const numPages = Math.ceil(tasks.length / tasksPerPage);
 
   function handleDelete(id) {
     Meteor.call("tasks.remove", id);
@@ -87,7 +55,16 @@ export function TodoList() {
   function handleDone(task) {
     Meteor.call("tasks.changeStatus", task._id, nextStatus(task.status));
   }
+
+  function handlePageChange(nextPage) {
+    if(nextPage >= numPages || nextPage < 0) {
+      return;
+    }
+
+    setCurrentPage(nextPage);
+  }
   
+
   return <Box>
     <ReturnButton to="/hello"/>
     <Box
@@ -112,55 +89,51 @@ export function TodoList() {
         <IconButton
           color="primary"
           aria-label="search"
-          onClick={() => setEffectiveSearchText(searchText)}
+          onClick={() => {
+            setEffectiveSearchText(searchText);
+            setCurrentPage(0);
+          }}
         >
           <SearchIcon />
         </IconButton>
       </Box>
 
+      <TodoListPage
+        tasks={tasks.slice(
+          currentPage * tasksPerPage,
+          Math.min((currentPage + 1) * tasksPerPage, tasks.length)
+        )}
+        handleDone={handleDone}
+        handleDelete={handleDelete}/>
       
-      <List>
-        {tasks.map((task) => {
-          const taskCreator = Meteor.users.findOne(task.creator).username;
-          const editor = taskCreator === user.username;
-          return <ListItem
-            key={task._id}
-            secondaryAction={
-              <IconButton edge="end" aria-label="Options" onClick={(e) => handleClick(e, task._id)} sx={{ color: "black" }}>
-                <MoreVertOutlinedIcon />
-              </IconButton>
-            }
-            sx={{
-              bgcolor: "gray",
-              margin: "1vmin",
-              width: "60vmin"
-            }}
-          >
-            <Button disabled={!editor} onClick={() => handleDone(task)}>
-              <ListItemIcon sx={{ color: getColor(task.status) }}>
-                <AssignmentIcon />
-              </ListItemIcon>
-            </Button>
-            <ListItemText
-              primary={formatTime(task.date) + " - " + task.name}
-              secondary={taskCreator}
-              secondaryTypographyProps={{ color: "white" }}
-            />
-            <Menu anchorEl={anchor[task._id]} open={Boolean(anchor[task._id])} onClose={() => handleClose()}>
-              <MenuItem onClick={() => handleEdit(task._id)}>{editor ? "Editar" : "Visualizar"}</MenuItem>
-              <MenuItem disabled={!editor} onClick={() => handleDelete(task._id)}>Remover</MenuItem>
-            </Menu>
-          </ListItem>;
-        })}
-      </List>
-      <Box position="relative" display="flex" alignItems="center" justifyContent="flex-start" width="100%" padding="10px" left="30vw">
-        <input
-          type="checkbox"
-          checked={onlyToDo}
-          onClick={() => setOnlyToDo(!onlyToDo)}
-          readOnly
-        />
-        <label>Apenas não concluídas</label>
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        width="60vmin"
+        padding="10px"
+      >
+        <Box display="flex" alignItems="center">
+          <input
+            type="checkbox"
+            checked={onlyToDo}
+            onClick={() => setOnlyToDo(!onlyToDo)}
+            readOnly
+          />
+          <label>Apenas não concluídas</label>
+        </Box>
+
+        <Box display="flex" alignItems="center">
+          <IconButton onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 0}>
+            <KeyboardArrowLeftIcon/>
+          </IconButton>
+          <Typography variant="p">
+            {currentPage + 1}
+          </Typography>
+          <IconButton onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage + 1 >= numPages}>
+            <KeyboardArrowRightIcon/>
+          </IconButton>
+        </Box>
       </Box>
       <Box display="flex" justifyContent="flex-end" width="60vmin">
         <IconButton
