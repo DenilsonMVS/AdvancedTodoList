@@ -37,15 +37,13 @@ export function TodoList() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handler = subscribeTasks({onlyToDo, substr: searchText});
+    const handler = subscribeTasks({onlyToDo, substr: searchText, pageNumber: currentPage});
     return () => {
       handler.stop();
     };
-  }, [onlyToDo, effectiveSearchText]);
+  }, [onlyToDo, effectiveSearchText, currentPage]);
 
   const tasks = useTracker(() => tasksCollection.find({}, {}).fetch());
-  const tasksPerPage = 4;
-  const numPages = Math.ceil(tasks.length / tasksPerPage);
 
   function handleDelete(id) {
     Meteor.call("tasks.remove", id);
@@ -57,7 +55,7 @@ export function TodoList() {
   }
 
   function handlePageChange(nextPage) {
-    if(nextPage >= numPages || nextPage < 0) {
+    if(nextPage < 0) {
       return;
     }
 
@@ -99,10 +97,7 @@ export function TodoList() {
       </Box>
 
       <TodoListPage
-        tasks={tasks.slice(
-          currentPage * tasksPerPage,
-          Math.min((currentPage + 1) * tasksPerPage, tasks.length)
-        )}
+        tasks={tasks}
         handleDone={handleDone}
         handleDelete={handleDelete}/>
       
@@ -130,7 +125,7 @@ export function TodoList() {
           <Typography variant="p">
             {currentPage + 1}
           </Typography>
-          <IconButton onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage + 1 >= numPages}>
+          <IconButton onClick={() => handlePageChange(currentPage + 1)} disabled={false/*currentPage + 1 >= numPages*/}>
             <KeyboardArrowRightIcon/>
           </IconButton>
         </Box>
